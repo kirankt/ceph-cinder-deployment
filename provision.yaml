@@ -1,6 +1,6 @@
 ---
-- hosts: masters
+- hosts: all
   become: true
   become_user: root
   roles:
-    - master
+    - common

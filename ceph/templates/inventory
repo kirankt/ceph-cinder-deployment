@@ -1,0 +1,14 @@
+[mons]
+{% for host in groups['all'] %}
+{{ hostvars[host].ansible_ssh_host }}
+{% endfor %}
+
+[osds]
+{% for host in groups['all'] %}
+{{ hostvars[host].ansible_ssh_host }}
+{% endfor %}
+
+[mgrs]
+{% for host in groups['all'] %}
+{{ hostvars[host].ansible_ssh_host }}
+{% endfor %}

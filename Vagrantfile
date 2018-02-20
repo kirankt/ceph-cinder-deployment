@@ -1,6 +1,10 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 #
+
+$vagrant_pool = (ENV['VAGRANT_POOL'] unless
+                  (ENV['VAGRANT_POOL'].nil? or ENV['VAGRANT_POOL'].empty?))
+
 Vagrant.configure(2) do |config|
   config.vm.box = "centos7"
   config.vm.box_url = "http://cloud.centos.org/centos/7/vagrant/x86_64/images/CentOS-7-x86_64-Vagrant-1608_01.LibVirt.box"
@@ -21,6 +25,12 @@ Vagrant.configure(2) do |config|
       domain.cpus = 2
       domain.nested = true  # enable nested virtualization
       domain.cpu_mode = "host-model"
+      if $vagrant_pool then
+        domain.storage_pool_name = $vagrant_pool
+      end
+      domain.storage :file, :size => '100G'
+      domain.storage :file, :size => '100G'
+      domain.storage :file, :size => '100G'
   end
  
   config.ssh.insert_key = false
@@ -32,12 +42,29 @@ Vagrant.configure(2) do |config|
           domain.memory = 3096
       end
       master.vm.provision "master", type: "ansible" do |ansible|
+        ansible.playbook = "provision.yaml"
+        ansible.groups = {
+          "nodes" => ["node"],
+          "masters" => ["master"],
+        }
+      end
+
+      master.vm.provision "openshift", type: "ansible" do |ansible|
         ansible.playbook = "openshift.yaml"
         ansible.groups = {
           "nodes" => ["node"],
           "masters" => ["master"],
         }
       end
+
+      master.vm.provision "ceph", type: "ansible" do |ansible|
+        ansible.playbook = "ceph.yaml"
+        ansible.groups = {
+          "nodes" => ["node"],
+          "masters" => ["master"],
+        }
+      end
+
       master.vm.provision "storage", type: "ansible" do |ansible|
         ansible.playbook = "storage.yaml"
         ansible.groups = {
@@ -61,7 +88,7 @@ Vagrant.configure(2) do |config|
           domain.memory = 2048
       end
       node.vm.provision "node", type: "ansible" do |ansible|
-        ansible.playbook = "openshift.yaml"
+        ansible.playbook = "provision.yaml"
         ansible.groups = {
           "nodes" => ["node"],
           "masters" => ["master"],

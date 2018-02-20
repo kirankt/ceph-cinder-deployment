@@ -1,13 +1,19 @@
 cluster-up:
 	vagrant up --no-provision
 
-cluster-openshift:
+cluster-provision:
 	vagrant provision node --provision-with=node
 	vagrant provision master --provision-with=master
+
+cluster-openshift:
+	vagrant provision --provision-with=openshift
 	bash util/extract.sh
 
-cluster-storage:
-	vagrant provision --provision-with=storage
+cluster-ceph:
+	vagrant provision --provision-with=ceph
 
-cluster-kubevirt:
-	vagrant provision --provision-with=kubevirt
+#cluster-storage:
+#	vagrant provision --provision-with=storage
+#
+#cluster-kubevirt:
+#	vagrant provision --provision-with=kubevirt
