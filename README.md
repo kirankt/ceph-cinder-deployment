@@ -1,14 +1,24 @@
-# OpenShift and KubeVirt Multinode Demo
+# OpenShift, Ceph, KubeVirt Multinode Deployment
 
-## Deploying OpenShift with Vagrant
+## Create cluster with Vagrant
 
 This will create an OpenShift cluster with one manster and one node via
 Vagrant:
 
-### OpenShift
+### Base cluster
 
 ```bash
 make cluster-up
+make cluster-provision
+```
+
+This will create two VMs and perform some initial setup tasks relevant for all
+configurations.  Once this step is complete you may proceed with deploying
+openshift or skip to ceph.
+
+### OpenShift
+
+```bash
 make cluster-openshift
 ```
 
@@ -28,83 +38,10 @@ master    Ready     master    3h        v1.9.1+a0ce1bc657
 node      Ready     <none>    3h        v1.9.1+a0ce1bc657
 ```
 
-### Storage Provisioner
+### Ceph
 
-To deploy `storage` run
-
-```
-make cluster-storage
-```
-
-Once it is done, you can see the storage deployed:
-
-```bash
-$ ./oc.sh get pods -n kube-system
-NAME          READY     STATUS    RESTARTS   AGE
-ceph-demo-0   7/7       Running   2          52m
-```
-
-To test the installation, start a pod which requests storage from that
-provisioner:
-
-```bash
-$ ./oc.sh create -f examples/storage-pod.yaml
-$ /oc.sh get pvc
-NAME       STATUS    VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS        AGE
-demo-pvc   Bound     pvc-2d1a98e1-12ef-11e8-a1c4-525400cc240d   1Gi        RWO            standalone-cinder   24m
-$ ./oc.sh get pv
-NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS    CLAIM              STORAGECLASS        REASON    AGE
-pvc-2d1a98e1-12ef-11e8-a1c4-525400cc240d   1Gi        RWO            Delete           Bound     default/demo-pvc   standalone-cinder             24m
-```
-
-### KubeVirt
-
-To deploy `KubeVirt` run
+To deploy containerized ceph on the cluster run
 
 ```
-make cluster-kubevirt
+make cluster-ceph
 ```
-
-Once it is done, you can see all KubeVirt pods deployed:
-
-```bash
-$ ./oc.sh get pods -n kube-system
-NAME                              READY     STATUS    RESTARTS   AGE
-virt-controller-66d948c84-kmfxs   0/1       Running   0          17m
-virt-controller-66d948c84-mmmnx   1/1       Running   0          17m
-virt-handler-64sjz                1/1       Running   0          17m
-virt-handler-ps8ds                1/1       Running   0          17m
-```
-
-To test the installation, start a vm with alpine:
-
-```bash
-$ ./oc.sh create -f examples/vm.yaml
-$ sleep 300 # We need to pull a lot when the first vm starts on a node
-$ ./oc.sh get vms -o yaml | grep phase
-    phase: Running
-```
-
-## Deploying OpenShift on arbitrary nodes
-
-First create an inventory:
-
-```
-[common]
-node0 ansible_host=192.168.200.2 ansible_user=root
-node1 ansible_host=192.168.200.3 ansible_user=root
-
-[master]
-master ansible_host=192.168.200.4 ansible_user=root
-
-[storage]
-master ansible_host=192.168.200.4 ansible_user=root
-```
-
-Save it in `myinventory`. Then run
-
-```bask
-ansible-playbook -i myinventory openshift.yaml
-ansible-playbook -i myinventory storage.yaml
-ansible-playbook -i myinventory kubevirt.yaml
-``
