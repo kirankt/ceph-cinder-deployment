@@ -4,29 +4,3 @@
   become_user: root
   roles:
     - ceph
-  # Kludge to add ceph-client to overcome this bug: https://bugzilla.redhat.com/show_bug.cgi?id=1540578
-  tasks:
-    - name: Add EPEL repository
-      yum_repository:
-        name: epel
-        description: EPEL YUM repo
-        baseurl: https://download.fedoraproject.org/pub/epel/$releasever/$basearch/
-        gpgcheck: no
-    - name: Add Ceph repository
-      yum_repository:
-        name: ceph
-        description: Ceph YUM repo
-        file: ceph
-        baseurl: https://download.ceph.com/rpm-{{cephReleaseName}}/{{distro}}/$basearch
-        gpgcheck: no
-    - name: Add Ceph repository
-      yum_repository:
-        name: ceph-noarch
-        description: Ceph-noarch YUM repo
-        file: ceph
-        baseurl: https://download.ceph.com/rpm-{{cephReleaseName}}/{{distro}}/noarch
-        gpgcheck: no
-    - name: install the latest version of ceph-common
-      package:
-        name: ceph-common
-        state: latest

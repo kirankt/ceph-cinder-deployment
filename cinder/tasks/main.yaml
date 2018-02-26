@@ -73,6 +73,6 @@
   when: result.rc != 0
 
 - name: Create Cinder deployment with Mariadb and Rabbitmq
-  command: "/usr/local/bin/oc create -f https://raw.githubusercontent.com/kirankt/standalone-cinder/demo/cinder-ceph.yml"
+  command: "/usr/local/bin/oc apply -f https://raw.githubusercontent.com/kirankt/standalone-cinder/demo/cinder-ceph.yml"
   register: result
   failed_when: result.rc > 2 or result.rc < 0
