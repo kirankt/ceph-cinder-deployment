@@ -1,0 +1,78 @@
+---
+- name: Check if cinder AnyUID Service Account exists
+  command: "/usr/local/bin/oc get serviceaccount cinder-anyuid -n kube-system"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: Create an AnyUID Service Account
+  command: "/usr/local/bin/oc create serviceaccount cinder-anyuid -n kube-system"
+  when: result.rc != 0
+
+- name: Create if cinder privileged Service Account exists
+  command: "/usr/local/bin/oc get serviceaccount cinder-privileged -n kube-system"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: Create a privileged Service Account
+  command: "/usr/local/bin/oc create serviceaccount cinder-privileged -n kube-system"
+  when: result.rc != 0
+
+- name: Grant anyuid access to cinder-anyuid SA
+  command: "/usr/local/bin/oc adm policy add-scc-to-user anyuid -z cinder-anyuid -n kube-system"
+
+- name: Grant privileged access to cinder-privileged SA
+  command: "/usr/local/bin/oc adm policy add-scc-to-user privileged -z cinder-privileged -n kube-system"
+
+- name: "Label a node to host mariadb"
+  command: "/usr/local/bin/oc label node node mariadb=true"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: "Check if cinder secrets exists"
+  command: "/usr/local/bin/oc get secret cinder-secrets -n kube-system"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: "Create cinder secrets"
+  command: "/usr/local/bin/oc create secret generic cinder-secrets -n kube-system --from-literal=db-root-password={{ mariadb_root_password }} --from-literal=cinder-password={{cinder_db_password}} --from-literal=rabbitmq-password={{ rabbitmq_password }}"
+  when: result.rc != 0
+
+- name: "See if cinder_volumes pool exists"
+  shell: "ceph osd lspools | grep cinder_volumes"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: "Create cinder_volumes pool"
+  command: "ceph osd pool create cinder_volumes 128"
+  when: result.rc != 0
+
+- stat:
+    path: /etc/ceph/ceph.client.cinder.keyring
+  register: keyring_file
+
+- name: "Create client.cinder user keyring file"
+  command: "ceph-authtool -C /etc/ceph/ceph.client.cinder.keyring -n client.cinder --cap osd 'allow rwx pool=cinder_volumes' --cap mon 'allow r' --cap mds 'allow rw' --gen-key"
+  when: keyring_file.stat.exists == False
+
+- name: "Check if client.cinder exists in ceph auth list"
+  shell: "ceph auth list | grep client.cinder"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: "Add cinder user into Ceph auth"
+  command: "ceph auth add client.cinder -i /etc/ceph/ceph.client.cinder.keyring"
+  when: result.rc != 0
+
+- name: "Check if ceph secrets exists"
+  command: "/usr/local/bin/oc get secret ceph-secrets -n kube-system"
+  register: result
+  failed_when: result.rc >= 2
+
+- name: "Create ceph secrets"
+  command: "/usr/local/bin/oc create secret generic ceph-secrets -n kube-system --from-file=/etc/ceph/ceph.conf --from-file=/etc/ceph/ceph.client.cinder.keyring"
+  when: result.rc != 0
+
+- name: Create Cinder deployment with Mariadb and Rabbitmq
+  command: "/usr/local/bin/oc create -f https://raw.githubusercontent.com/kirankt/standalone-cinder/demo/cinder-ceph.yml"
+  register: result
+  failed_when: result.rc > 2 or result.rc < 0

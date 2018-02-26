@@ -2,3 +2,5 @@ kubevirtRelease: v0.3.0-alpha.0
 storageRelease: latest
 openshiftRelease: openshift-ansible-3.9.0-0.42.0 
 cephRelease: v3.0.26
+cephReleaseName: luminous
+distro: el7

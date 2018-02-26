@@ -1,0 +1,5 @@
+---
+
+mariadb_root_password: weakpassword
+cinder_db_password: cinderpassword
+rabbitmq_password: rabbitmqpassword

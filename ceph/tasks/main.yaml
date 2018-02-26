@@ -23,4 +23,4 @@
     dest: /id_rsa
     mode: 0600
 - name: Provision ceph via ansible through ansible
-  command: /bin/bash -c 'ansible-playbook --key-file "/id_rsa" -i /inventory /playbooks/site-docker.yml.sample | tee /ansible.log '
+  command: /bin/bash -c 'ansible-playbook --key-file "/id_rsa" -i /inventory /playbooks/site.yml.sample | tee /ansible.log '

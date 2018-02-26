@@ -12,8 +12,11 @@ cluster-openshift:
 cluster-ceph:
 	vagrant provision --provision-with=ceph
 
-#cluster-storage:
-#	vagrant provision --provision-with=storage
-#
-#cluster-kubevirt:
-#	vagrant provision --provision-with=kubevirt
+cluster-cinder:
+	vagrant provision --provision-with=cinder
+
+cluster-storage:
+	vagrant provision --provision-with=storage
+
+cluster-kubevirt:
+	vagrant provision --provision-with=kubevirt

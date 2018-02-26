@@ -65,6 +65,14 @@ Vagrant.configure(2) do |config|
         }
       end
 
+      master.vm.provision "cinder", type: "ansible" do |ansible|
+        ansible.playbook = "cinder.yaml"
+        ansible.groups = {
+          "nodes" => ["node"],
+          "masters" => ["master"],
+        }
+      end
+
       master.vm.provision "storage", type: "ansible" do |ansible|
         ansible.playbook = "storage.yaml"
         ansible.groups = {
